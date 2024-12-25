@@ -3,8 +3,6 @@ Author: error: error: git config user.name & please set dead value or install gi
 Date: 2023-08-20 17:08:22
 LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
 LastEditTime: 2023-08-26 17:34:02
-FilePath: \研究生学习档案\项目代码\HLAB\base_experminent.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 '''
 import torch
 import math
@@ -38,7 +36,6 @@ torch.backends.cudnn.deterministic = True
 TRAIN_BATCH_SIZE = 512
 TEST_BATCH_SIZE = 512
 LR = 0.00001
-# 定义必要的参数
 struc_hid_dim = 16
 node_in_dim = (6, 3)  # node dimensions in input graph, should be (6, 3) if using original features
 node_h_dim = (struc_hid_dim, 16)  # node dimensions to use in GVP-GNN layers
@@ -74,8 +71,8 @@ def test(dataset_file,model_file):
                 dropout=0.1
             )
     model_eval.to(device)
-    model_eval.load_state_dict(torch.load(model_file, map_location='cpu'), strict = False)#加载一些训练好的模型参数,其实相当于参数初始化，比直接初始化为0效果好
-    model_eval.eval()#加载模型
+    model_eval.load_state_dict(torch.load(model_file, map_location='cpu'), strict = False)
+    model_eval.eval()
     
     ys,metrics=eval_step(model_eval,test_loader,float(threshold),True)
     return ys
@@ -98,7 +95,7 @@ if __name__ == '__main__':
     file_smmpmbec_independent='../data/Independent_subset_new/smmpmbec_subset.csv'
     file_Anthemiedb1424='../data/ideb_subset_new/Anthem_sub.txt'
     file_AnthemTexternal='../data/T_external_subset_new/Anthem_subset.txt'
-    file_AnthemIndependent='/home1/layomi/项目代码/MMGHLA_CT_blousm_weight/results/test_set_metrics/all_independent1_owndata_0.5.txt'
+    file_AnthemIndependent='../data/Independent_subset_new/Anthem_subset.txt'
     file_ACMEiedb1424='../data/ideb_subset_new/iedb_result_new_last_2_ACME_yuan.txt'
     file_ACMEtexternal='../data/T_external_subset_new/Texternal_result_new_last_2_ACME_yuan.txt'
     file_ACMEindependent='../data/Independent_subset_new/Independent_result_new_last_2_ACME_yuan.txt'
@@ -121,8 +118,10 @@ if __name__ == '__main__':
         y_prob_mean = [np.mean(scores) for scores in zip(*ys_prob_list)]     
         y_preb_list=transfer(y_prob_mean, threshold = 0.5)
         y_preb_list=[int(d) for d in y_preb_list]    
-            
-        #为了便于不同长度和超型下性能的统计，重读文件且将预测结果添加到文件中并保存
+        
+        '''
+        To facilitate the performance statistics under different lengths and hyperparameters,  append the prediction results
+        '''
         all_data_list=pd.read_csv(dataset_file)
         all_data_list=all_data_list.values.tolist()
         
@@ -130,7 +129,7 @@ if __name__ == '__main__':
             print('Error!')
         y_true_list=[]
         for i in range(len(all_data_list)):
-            all_data_list[i].extend([y_prob_mean[i],all_data_list[i][2],y_preb_list[i]]) #预测分数，真实类别，预测类别
+            all_data_list[i].extend([y_prob_mean[i],all_data_list[i][2],y_preb_list[i]]) # Prediction scores, true labels, predicted labels
             y_true_list.append(int(all_data_list[i][2]))
             
         result_folder='../results/data_result_file/{}'.format(dataset_file.split('/')[-2])  
@@ -141,7 +140,7 @@ if __name__ == '__main__':
             for sublist in all_data_list:
                 line = ','.join(map(str, sublist)) + '\n'
                 f.write(line)
-        print('结果数据存储完成') 
+        print('Result data storage completed')
         
         
         metrics_set = performances(y_true_list, y_preb_list, y_prob_mean, print_ = True)
@@ -151,7 +150,7 @@ if __name__ == '__main__':
         recording_w(metrics_wfile1, metrics_dict,'a+')
       
     
-#将结果进行追加记录到file1
+#Append the results to file1.
 def recording_w(file1,record,w_or_a='w'):
     if isinstance(record,dict):
         #print('True')

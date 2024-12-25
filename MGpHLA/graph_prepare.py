@@ -39,14 +39,12 @@ def protein_graph_construct(proteins, save_dir):
         if os.path.exists(save_dir + pro_id + '.npy'):
             continue
         seq = proteins[key]
-        #print('生成接触图',len(seq))
         if len(seq) <= 1000:
             data.append((pro_id, seq))
             batch_labels, batch_strs, batch_tokens = batch_converter(data)
             with torch.no_grad():
                 results = model(batch_tokens, repr_layers=[33], return_contacts=True)
             contact_map = results["contacts"][0].numpy()
-            #print('输出接触图形状',contact_map.shape)
             target_graph[pro_id] = contact_map
         else:
             contact_prob_map = np.zeros((len(seq), len(seq)))  # global contact map prediction
@@ -127,14 +125,12 @@ def protein_graph_construct_24(proteins, save_dir):
         if os.path.exists(save_dir + pro_id + '.npy'):
             continue
         seq = proteins[key][24:]
-        #print('生成接触图',len(seq))
         if len(seq) <= 1000:
             data.append((pro_id, seq))
             batch_labels, batch_strs, batch_tokens = batch_converter(data)
             with torch.no_grad():
                 results = model(batch_tokens, repr_layers=[33], return_contacts=True)
             contact_map = results["contacts"][0].numpy()
-            #print('输出接触图形状',contact_map.shape)
             target_graph[pro_id] = contact_map
         else:
             contact_prob_map = np.zeros((len(seq), len(seq)))  # global contact map prediction

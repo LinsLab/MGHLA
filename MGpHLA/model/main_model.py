@@ -230,14 +230,14 @@ def important_nodes_new_nodeedge(hla_feature, hla_batch):
     new_hla_feature = []
 
     for i, features in enumerate(hla_split_feature):
-        modified_features = features.clone().detach()  # 先克隆并断开连接
+        modified_features = features.clone().detach()  
         if features.size(0) >= 171:
             modified_features[residue_indices_0] *= 3
         else:
             modified_features[residue_indices_1] *= 3
         new_hla_feature.append(modified_features)
 
-    # 连接结果形成新的特征集
+  
     new_hla_feature = torch.cat(new_hla_feature, dim=0)
     
 

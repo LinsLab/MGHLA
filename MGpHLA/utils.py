@@ -21,10 +21,13 @@ torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
-def hla_key_and_setTrans(file1,file2):#设置hla的key,然后对数据集进行一个转化，其中hla用key表示
+def hla_key_and_setTrans(file1,file2):
     
-    #此函数值的是提取全部hla构分子间相互作用图的情况
-    #file1为hla全部分子数据,file2值的是训练数据文件或其他相互作用文件
+    '''
+      Set the HLA key, then transform the dataset, where HLA is represented by the key,
+      file1 is the complete HLA molecular data, file2 is the training data file or other interaction files
+    '''
+    
 
     with open(file1,'r') as f1:
         data=pd.read_csv(f1)
@@ -53,12 +56,12 @@ def hla_key_and_setTrans(file1,file2):#设置hla的key,然后对数据集进行�
     
     return train_entry,train_hla,train_hla_dict,hla_dict
 
-def hla_key_and_setTrans_2(file1,file2):#设置hla的key,然后对数据集进行一个转化，其中hla用key表示
-    
-    #此函数值的是提取全部hla构分子间相互作用图的情况
-    #file1为hla全部分子数据,file2值的是训练数据文件或其他相互作用文件
-    #与第一个的区别是提取hla,peptide,y的列数不同，由于文件数据存储不同
-
+def hla_key_and_setTrans_2(file1,file2):
+    '''
+       Set the HLA key, then transform the dataset, where HLA is represented by the key,
+       file1 is the complete HLA molecular data, file2 is the training data file or other interaction files,
+       The difference from the first one is the number of columns extracted for HLA, peptide, and y, due to different file data storage
+    '''
     with open(file1,'r') as f1:
         data=pd.read_csv(f1)
     f1.close()
@@ -90,8 +93,9 @@ def hla_key_and_setTrans_2(file1,file2):#设置hla的key,然后对数据集进�
 
    
     
-#建立函数，得到comm_hla_sequence中所有hla的全序列
+
 def hla_full_sequence():
+    # Create a function to get the full sequence of all HLAs in comm_hla_sequence
     with open('data/contact/common_hla_sequence.csv','r') as f:
             data=pd.read_csv(f)
     f.close()
@@ -101,14 +105,14 @@ def hla_full_sequence():
     with open('data/contact/hla_prot.fasta','r') as f:
         for line in f.readlines():
             if '>' in line:
-                flag=True    #用此标记表示是否需要进行序列后续添加
-                hla=''       #设定
+                flag=True    # Use this flag to indicate whether sequence addition is required later
+                hla=''       
                 list= line.split(' ')
-                elem=re.split(r'[*:]',list[1])    #将不符合规定的HLA进行拆分
+                elem=re.split(r'[*:]',list[1])    # Split HLA that does not meet the specifications
                 if len(elem)<3:
                     flag=False
                     continue
-                hla='HLA-'+elem[0]+'*'+elem[1]+':'+elem[2]   #合并成符合规定的形式
+                hla='HLA-'+elem[0]+'*'+elem[1]+':'+elem[2]   # Merge into the required format
                 if hla in hla_have:
                     flag=False
                     continue
@@ -123,7 +127,7 @@ def hla_full_sequence():
                     line.strip('')
                     hla_full_sequence_dict[hla]=str(hla_full_sequence_dict[hla])+line
 
-    hla_full_sequence_rev={v:k for k,v in hla_full_sequence_dict.items()}    #得到反序列字典
+    hla_full_sequence_rev={v:k for k,v in hla_full_sequence_dict.items()}    
     
     save_dir='data/'
     if not os.path.exists(save_dir):
@@ -139,8 +143,8 @@ def hla_full_sequence():
 
 
 
-def hla_key_full_sequence():    #得到以hla对应键值为键，value为全序列的文件
-
+def hla_key_full_sequence():    
+     # Get a file with HLA key-value pairs, where the key is the HLA key and the value is the full sequence
     data=json.load(open('data/contact/common_hla_full_sequence.txt'), object_pairs_hook=OrderedDict)
     data_keys=list(data.keys())
     with open('data/contact/common_hla_sequence.csv','r') as f1:
@@ -166,16 +170,16 @@ def hla_key_full_sequence():    #得到以hla对应键值为键，value为全序
     write_f=open(save_file1,'w')
     write_f.write (json.dumps (key_hla_full_sequence))
     write_f.close()
-    #print('写入成功')
+
     
 
 
-#构建HLA分子间关系图网络
+# Build an HLA molecular interaction network
 def classtopo_graph(data_path='../data', flod=0,type=0,device=torch.device('cpu')):
     edges = []
     edge_type = {}
     e_feat = []
-    #得到图的边
+    # Get the edges of the graph
     save_dir='../data/hla_hla/'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)

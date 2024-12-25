@@ -35,7 +35,7 @@ from sklearn.metrics import classification_report
 from sklearn.utils import class_weight
 
 
-#性能评估
+# Performance evaluation
 def performances(y_true, y_pred, y_prob, print_ = True):
     
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels = [0, 1]).ravel().tolist()

@@ -429,8 +429,8 @@ class StructureEncoder(nn.Module):
 
         if seq_in:
             self.W_s = nn.Embedding(21, 21)
-            #node_in_dim = (node_in_dim[0] + 21, node_in_dim[1])    #动态调整输入节点的维度，如果需要输入序列，则增加维度
-            node_in_dim = (node_in_dim[0] + 32, node_in_dim[1])    #动态调整输入节点的维度，如果需要输入序列，则增加维度
+            #node_in_dim = (node_in_dim[0] + 21, node_in_dim[1])    
+            node_in_dim = (node_in_dim[0] + 32, node_in_dim[1])    # Dynamically adjust the input node dimensions, adding dimensions if a sequence is required
             node_h_dim=(node_h_dim[0]+16,node_h_dim[1])
         
         self.W_v = nn.Sequential(

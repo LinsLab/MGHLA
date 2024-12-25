@@ -67,13 +67,13 @@ def get_edge_index(target_key):
     contact_map_file = os.path.join(distance_dir, str(target_key) + '.npy')
     distance_map = np.load(contact_map_file)
     # the neighbor residue should have a edge
-    # add self loop增加自环
+    # add self loop
     for i in range(len(distance_map)):
         distance_map[i, i] = 1
         if i + 1 < len(distance_map):
             distance_map[i, i + 1] = 1    
-    # print(distance_map)
-    index_row, index_col = np.where(distance_map >= 0.5)  # for threshold     #得到所有接触结点（有边）对应的结点下标
+    
+    index_row, index_col = np.where(distance_map >= 0.5)  # for threshold     
     for i, j in zip(index_row, index_col):
         target_edge_index.append([i, j])  # dege
     edges_index = [[row[i] for row in target_edge_index] for i in range(2)]
@@ -117,7 +117,6 @@ class CATHDataset:
 
 class ProteinGraphDataset(data.Dataset):
     '''
-    这个类的主要功能是将输入的蛋白质结构信息转换为图形数据，并将其包装在torch_geometric.data.Data对象中。这个对象包括蛋白质的坐标、氨基酸序列、图的节点和边特征等信息。这个图形数据可以用于训练图形神经网络或其他机器学习任务，以从蛋白质结构中提取有用的信息。
     A map-syle `torch.utils.data.Dataset` which transforms JSON/dictionary-style
     protein structures into featurized protein graphs as described in the 
     manuscript.
@@ -168,10 +167,10 @@ class ProteinGraphDataset(data.Dataset):
                        'N': 2, 'Y': 18, 'M': 12, 'X': 20, '#': 21}
         self.num_to_letter = {v:k for k, v in self.letter_to_num.items()}
         
-        # 新增一个属性来存储分子图列表
+        #Store the list of molecular graphs
         self.graph_list = []
 
-        # 处理每个蛋白质并将其添加到图列表中
+        # rocess each protein and add it to the graph list
         for protein_data in data_list:
             protein_graph = self._featurize_as_graph(protein_data)
             self.graph_list.append(protein_graph)
@@ -184,7 +183,6 @@ class ProteinGraphDataset(data.Dataset):
     
     def _featurize_as_graph(self, protein):
         name = protein['name']  # 1ri5.A
-        #print(name)
         with torch.no_grad():
             coords = torch.as_tensor(protein['coords'], 
                                      device=self.device, dtype=torch.float32)  

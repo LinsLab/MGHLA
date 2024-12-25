@@ -28,10 +28,10 @@ class KANLinear(torch.nn.Module):
         grid = (
             (
                 torch.arange(-spline_order, grid_size + spline_order + 1) * h
-                + grid_range[0] #该序列乘以步长 h 并加上起始范围 grid_range[0]，生成一个覆盖指定范围且扩展了边界的实数序列。
+                + grid_range[0] # This sequence is multiplied by the step size h and added to the starting range grid_range[0], generating a real-valued sequence that covers the specified range and extends the boundaries.
             )
-            .expand(in_features, -1) #将生成的序列扩展到更多的维度
-            .contiguous() #确保内存中的数据是连续的，这通常是为了优化性能或满足某些操作的内存布局要求。
+            .expand(in_features, -1)
+            .contiguous() # This sequence is multiplied by the step size h and added to the starting range grid_range[0], generating a real-valued sequence that covers the specified range and extends the boundaries.
         )
         self.register_buffer("grid", grid)
 
@@ -83,37 +83,35 @@ class KANLinear(torch.nn.Module):
             x (torch.Tensor): Input tensor of shape (batch_size, in_features).
 
         Returns:
-            torch.Tensor: B-spline bases tensor of shape (batch_size, in_features, grid_size + spline_order).#表示每个输入特征对应的 B-样条基。
+            torch.Tensor: B-spline bases tensor of shape (batch_size, in_features, grid_size + spline_order).# Represents the B-spline basis corresponding to each input feature.
         """
         assert x.dim() == 2 and x.size(1) == self.in_features
 
         grid: torch.Tensor = (
             self.grid
         )  # (in_features, grid_size + 2 * spline_order + 1)  64,5+2*3+1
-        #错？(这里的12怎么来的?  由cox-de Boor Algorithm可知：要计算三阶，格点为5的基函数)
-        #错？ (N03,N13,N23(n)   N02,N12,N22,N23(2n+1)    N01,N11,N21,N31,N41(grid_size))
+       
 
 
         x = x.unsqueeze(-1)# 64,784,1
         bases = ((x >= grid[:, :-1]) & (x < grid[:, 1:])).to(x.dtype)
-        #计算初始基函数，这是通过比较 x 和 grid 的相邻元素来进行的
-        #在比较前x首先会广播x.shape= grid[:, :-1].shape      64，784，1 ->  64,784,11
-        #这里一个数 对应12个网格点。 共有11个小区间。对于闭开区间 [  ),进行11个区间的判断。区间内的为1，区间外的为0
-        #初始化 B-样条的最基础的形式，即零阶样条（piecewise constant functions），其中每个样条基函数在其对应的区间内为 1，外部为 0。这是构建高阶样条的基础。
+        # Calculate the initial basis functions, which are done by comparing adjacent elements of x and grid.
+        # Before comparison, x will be broadcasted to match x.shape = grid[:, :-1].shape 64, 784, 1 -> 64, 784, 11
+        # Here, one number corresponds to 12 grid points. There are 11 sub-intervals. For a closed-open interval [ ), 11 sub-intervals are judged. Values inside the interval are 1, outside the interval are 0.
+        # Initialize the most basic form of B-splines, i.e., zero-order splines (piecewise constant functions), where each spline basis function is 1 within its corresponding interval, and 0 outside. This is the foundation for constructing higher-order splines.
         
         
-        
-        for k in range(1, self.spline_order + 1):#来逐步构建每一级的 B-样条基函数
-            #基于向量形式的计算, 从第一阶计算到第三阶 # 1 ，2 ，3
-            #注意小区间是共有11个，但是knots不是 knots number= 控制点数+阶数+1 
-            #根据knots断点来划分小区间，每个小区间的大小为 阶数D 
+        for k in range(1, self.spline_order + 1):# Gradually construct B-spline basis functions for each order
+            # Vector-based calculation, from first-order to third-order # 1, 2, 3
+            # Note that there are 11 sub-intervals, but the number of knots is not knots number = number of control points + order + 1
+            # Divide the sub-intervals based on the knot breakpoints, with each sub-interval having size D, the order. 
             # x -t1, x -t2, x -t3, x -t4, x -t5, x -t6, x -t7, x  -t8, x  -t9, x  -t10
             # t3-t1, t4-t2, t5-t3, t6-t4, t7-t5, t8-t6, t9-t7, t10-t8, t11-t9, t12-t10
             #  N1_0,  N2_0,  N3_0,  N4_0,  N5_0,  N6_0,  N7_0,   N8_0,   N9_0,   N10_0,  N11_0 
-            #第二项略
-            #k=1获得: N1_1, N2_1,  N3_1,  N4_1,  N5_1,  N6_1,  N7_1,   N8_1,   N9_1,   N10_1
-            #k=2获得：     N1_2, N2_2,  N3_2,  N4_2,  N5_2,  N6_2,  N7_2,   N8_2,   N9_2,   
-            #k=3获得：          N1_3, N2_3,  N3_3,  N4_3,  N5_3,  N6_3,  N7_3,   N8_3,   
+            # The second term is omitted
+            # k=1 gives: N1_1, N2_1, N3_1, N4_1, N5_1, N6_1, N7_1, N8_1, N9_1, N10_1，
+            # k=2 gives: N1_2, N2_2, N3_2, N4_2, N5_2, N6_2, N7_2, N8_2, N9_2，
+            # k=3 gives: N1_3, N2_3, N3_3, N4_3, N5_3, N6_3, N7_3, N8_3，  
            
             bases = (
                 (x - grid[:, : -(k + 1)])
@@ -134,7 +132,7 @@ class KANLinear(torch.nn.Module):
             self.in_features,
             self.grid_size + self.spline_order,
         )
-        return bases.contiguous()#有些操作要求输入张量是连续的，如果输入张量不是连续的，那么可以先调用contiguous()方法使其变为连续张量，然后再进行相应的操作。
+        return bases.contiguous()# Some operations require the input tensor to be contiguous. If the input tensor is not contiguous, you can first call the contiguous() method to make it contiguous, then perform the corresponding operation.
 
     def curve2coeff(self, x: torch.Tensor, y: torch.Tensor):
         """
@@ -156,7 +154,7 @@ class KANLinear(torch.nn.Module):
         B = y.transpose(0, 1)  # (in_features, batch_size, out_features)
         solution = torch.linalg.lstsq(
             A, B
-        ).solution  # (in_features, grid_size + spline_order, out_features)  #输出张量 y 也被转置以匹配 A 的形状
+        ).solution  # (in_features, grid_size + spline_order, out_features)  # The output tensor y is also transposed to match the shape of A.
 
         result = solution.permute(
             2, 0, 1
@@ -170,10 +168,10 @@ class KANLinear(torch.nn.Module):
         return result.contiguous()
 
     @property
-    def scaled_spline_weight(self): #根据条件调整 spline_weight 的缩放。[64, 784, 8]
+    def scaled_spline_weight(self):
         return self.spline_weight * (
             self.spline_scaler.unsqueeze(-1) #[64, 784, 1]  #(out_features, in_features)
-            if self.enable_standalone_scale_spline #是否对每个样条的权重应用独立的缩放系数。这可能是为了允许模型在不同的输入特征或不同的维度上具有不同的响应强度
+            if self.enable_standalone_scale_spline # Whether to apply an independent scaling factor to the weights of each spline. This could allow the model to have different response strengths on different input features or dimensions.
             else 1.0
         )
 
@@ -181,10 +179,10 @@ class KANLinear(torch.nn.Module):
         assert x.dim() == 2 and x.size(1) == self.in_features
 
         base_output = F.linear(self.base_activation(x), self.base_weight)
-        #F.linear()是一个函数，用于执行线性变换操作。该函数将输入张量与权重矩阵相乘，并可选地添加偏置，以实现线性变换。具体而言，F.linear()函数接受两个参数：输入张量和权重矩阵，然后返回线性变换后的输出张量。
+        # F.linear() is a function used to perform linear transformation. The function multiplies the input tensor by the weight matrix and optionally adds a bias to achieve the linear transformation. Specifically, the F.linear() function takes two parameters: the input tensor and the weight matrix, and returns the output tensor after linear transformation.
         spline_output = F.linear(
             self.b_splines(x).view(x.size(0), -1),  
-            self.scaled_spline_weight.view(self.out_features, -1),#控制点 (spline_weight)：决定了样条函数的形状和振幅，是可学习的参数。
+            self.scaled_spline_weight.view(self.out_features, -1),# It determines the shape and amplitude of the spline function and is a learnable parameter.
         )
         return base_output + spline_output
 

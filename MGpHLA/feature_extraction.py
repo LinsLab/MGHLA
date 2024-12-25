@@ -3,16 +3,6 @@ Author: error: error: git config user.name & please set dead value or install gi
 Date: 2023-05-21 22:36:55
 LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
 LastEditTime: 2023-06-14 22:30:19
-FilePath: \GHLA\GpHLA\feature_extraction.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-'''
-'''
-Author: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
-Date: 2023-05-21 22:36:55
-LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
-LastEditTime: 2023-05-24 23:00:05
-FilePath: \GHLA\GpHLA\feature_extraction.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 '''
 import torch
 import math
@@ -27,13 +17,9 @@ from tqdm import tqdm
 import torch.nn as nn
 import pickle
 
-#构建多维图结构：HLA分子图+理化性质分析+HLA关系图
-
 def dic_normalize(dic):
-    # print(dic)
     max_value = dic[max(dic, key=dic.get)]
     min_value = dic[min(dic, key=dic.get)]
-    # print(max_value)
     interval = float(max_value) - float(min_value)
     for key in dic.keys():
         dic[key] = (dic[key] - min_value) / interval
@@ -44,11 +30,11 @@ def dic_normalize(dic):
 pro_res_table = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y',
                  'X']
 
-pro_res_aliphatic_table = ['A', 'I', 'L', 'M', 'V']    #氨基酸的脂肪烃
-pro_res_aromatic_table = ['F', 'W', 'Y']    #氨基酸中的芳香烃
-pro_res_polar_neutral_table = ['C', 'N', 'Q', 'S', 'T']     #不带电的极性氨基酸
-pro_res_acidic_charged_table = ['D', 'E']     #氨基酸的酸性，带电性？
-pro_res_basic_charged_table = ['H', 'K', 'R']        #氨基酸的初级带电性？
+pro_res_aliphatic_table = ['A', 'I', 'L', 'M', 'V']    
+pro_res_aromatic_table = ['F', 'W', 'Y']    
+pro_res_polar_neutral_table = ['C', 'N', 'Q', 'S', 'T']     
+pro_res_acidic_charged_table = ['D', 'E']     
+pro_res_basic_charged_table = ['H', 'K', 'R']        
 
 res_weight_table = {'A': 71.08, 'C': 103.15, 'D': 115.09, 'E': 129.12, 'F': 147.18, 'G': 57.05, 'H': 137.14,
                     'I': 113.16, 'K': 128.18, 'L': 113.16, 'M': 131.20, 'N': 114.11, 'P': 97.12, 'Q': 128.13,
@@ -57,12 +43,12 @@ res_weight_table['X'] = np.average([res_weight_table[k] for k in res_weight_tabl
 
 res_pka_table = {'A': 2.34, 'C': 1.96, 'D': 1.88, 'E': 2.19, 'F': 1.83, 'G': 2.34, 'H': 1.82, 'I': 2.36,
                  'K': 2.18, 'L': 2.36, 'M': 2.28, 'N': 2.02, 'P': 1.99, 'Q': 2.17, 'R': 2.17, 'S': 2.21,
-                 'T': 2.09, 'V': 2.32, 'W': 2.83, 'Y': 2.32}     #酸度系数
+                 'T': 2.09, 'V': 2.32, 'W': 2.83, 'Y': 2.32}     
 res_pka_table['X'] = np.average([res_pka_table[k] for k in res_pka_table.keys()])
 
 res_pkb_table = {'A': 9.69, 'C': 10.28, 'D': 9.60, 'E': 9.67, 'F': 9.13, 'G': 9.60, 'H': 9.17,
                  'I': 9.60, 'K': 8.95, 'L': 9.60, 'M': 9.21, 'N': 8.80, 'P': 10.60, 'Q': 9.13,
-                 'R': 9.04, 'S': 9.15, 'T': 9.10, 'V': 9.62, 'W': 9.39, 'Y': 9.62}    #碱解离常数
+                 'R': 9.04, 'S': 9.15, 'T': 9.10, 'V': 9.62, 'W': 9.39, 'Y': 9.62}    
 res_pkb_table['X'] = np.average([res_pkb_table[k] for k in res_pkb_table.keys()])
 
 res_pkx_table = {'A': 0.00, 'C': 8.18, 'D': 3.65, 'E': 4.25, 'F': 0.00, 'G': 0, 'H': 6.00,
@@ -109,7 +95,7 @@ def one_hot_encoding_unk(x, allowable_set):
         x = allowable_set[-1]
     return list(map(lambda s: x == s, allowable_set))
 
-def seq_feature(seq):      #序列特征
+def seq_feature(seq):      
    
     residue_feature = []
     for residue in seq:
@@ -126,7 +112,7 @@ def seq_feature(seq):      #序列特征
         residue_feature.append(res_property1 + res_property2)
 
     pro_hot = np.zeros((len(seq), len(pro_res_table)))
-    pro_property = np.zeros((len(seq), 12))     #蛋白质属性？
+    pro_property = np.zeros((len(seq), 12))   
     for i in range(len(seq)):
         # if 'X' in pro_seq:
         #     print(pro_seq)
@@ -137,7 +123,7 @@ def seq_feature(seq):      #序列特征
     return seq_feature
 
 
-def seq_feature_no_onehot(seq):      #序列特征
+def seq_feature_no_onehot(seq):    
    
     residue_feature = []
     for residue in seq:
@@ -154,7 +140,7 @@ def seq_feature_no_onehot(seq):      #序列特征
         residue_feature.append(res_property1 + res_property2)
 
     #pro_hot = np.zeros((len(seq), len(pro_res_table)))
-    pro_property = np.zeros((len(seq), 12))     #蛋白质属性？
+    pro_property = np.zeros((len(seq), 12))     
     for i in range(len(seq)):
         # if 'X' in pro_seq:
         #     print(pro_seq)
@@ -174,13 +160,13 @@ def sequence_to_graph(target_key, target_sequence, distance_dir):
     contact_map_file = os.path.join(distance_dir, str(target_key) + '.npy')
     distance_map = np.load(contact_map_file)
     # the neighbor residue should have a edge
-    # add self loop增加自环
+    # add self loop
     for i in range(target_size):
         distance_map[i, i] = 1
         if i + 1 < target_size:
             distance_map[i, i + 1] = 1    
     # print(distance_map)
-    index_row, index_col = np.where(distance_map >= 0.5)  # for threshold     #得到所有接触结点（有边）对应的结点下标
+    index_row, index_col = np.where(distance_map >= 0.5)  # for threshold     #Get the indices of all contact nodes (with edges)
     for i, j in zip(index_row, index_col):
         target_edge_index.append([i, j])  # dege
         target_edge_distance.append(distance_map[i, j])  # edge weight
@@ -233,7 +219,7 @@ def batch_seq_feature(seq_list,max_len,emb_len):
     return batch_features
 
 
-def batch_seq_feature_Bi(seq_list,max_len,emb_len):   #为了匹配blosum对理化特征也进行双向编码
+def batch_seq_feature_Bi(seq_list,max_len,emb_len):   #Bidirectional encoding
     # Assume all input tables and one_hot_encoding_unk function are defined outside this function
     batch_features = []
 

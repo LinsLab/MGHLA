@@ -62,8 +62,6 @@ from utils import hla_key_and_setTrans,hla_key_and_setTrans_2,hla_key_full_seque
 #from feature_extraction_contact import sequence_to_graph,batch_seq_feature,batch_seq_feature_Bi
 from feature_extraction import sequence_to_graph,batch_seq_feature_Bi
 
-#还需要引入数据处理文件中的函数(得到hla_dict等)
-#还需要引入特征提取文件中提取序列特征的函数
 TRAIN_BATCH_SIZE = 512
 TEST_BATCH_SIZE = 512
 max_pro_seq_len = 348
@@ -112,7 +110,7 @@ class HPIDataset_peps_new_blousm_pep(InMemoryDataset):
         super(HPIDataset_peps_new_blousm_pep, self).__init__(root,transform, pre_transform)
 
         self.hla=xh
-        self.peptide_key=peptide_key    #peptide的key就是它本身
+        self.peptide_key=peptide_key    # The key for the peptide is the peptide itself
         self.y=y
         self.hla_contact_graph=hla_contact_graph
         self.hla_3d_graph=hla_3d_graph
@@ -160,7 +158,7 @@ class HPIDataset_peps_new_blousm_pep(InMemoryDataset):
                        152,156,158,159,163,167,171]
             residue_indices = [i - 1 for i in residue_indices]
             valid_indices = [i for i in residue_indices if i < hla_features.size(0)]
-            hla_features[valid_indices] = hla_features[valid_indices] * 3.0  # 将这些节点特征放大2倍
+            hla_features[valid_indices] = hla_features[valid_indices] * 3.0  # Scale these node features by a factor of 3
         
             ContactData_hla = DATA.Data(x=torch.Tensor(hla_features),
                                     edge_index=torch.LongTensor(hla_edge_index).transpose(1, 0),
@@ -168,7 +166,7 @@ class HPIDataset_peps_new_blousm_pep(InMemoryDataset):
                                     y=torch.FloatTensor([labels]))
             ContactData_hla.__setitem__('hla_size', torch.LongTensor([hla_size]))
             
-            #3-d-mol-data
+            # 3-d-mol-data
             ThreeD_hla=hla_3d_graph[hla]  #ThreeD_hla type=orch_geometric.data.Data
             
             Data_pep = {
@@ -196,7 +194,7 @@ class HPIDataset_peps_new_blousm_pep(InMemoryDataset):
     
     
     
-def train_predict_div(train_file,vaild_file,dataset_structure,seed):    #数据集应该为未划分训练集测试集验证集的全数据集
+def train_predict_div(train_file,vaild_file,dataset_structure,seed):   
     
     common_hla_file='../data/contact/common_hla_sequence.csv'
     train_entries,train_hla_keys,train_hla_dict,hla_dict=hla_key_and_setTrans(common_hla_file,train_file)
@@ -216,11 +214,10 @@ def train_predict_div(train_file,vaild_file,dataset_structure,seed):    #数据�
         key=int(key)
         hla_full_sequence_dict[key]=value
     
-    # 构建接触图/home/layomi/drive1/项目代/home/layomi/drive1/项目代码/MMGHLA_Classification_Topography码/MMGHLA_Classification_Topography
     process_dir = os.path.join('..', 'data/pre_process')
-    hla_distance_dir = os.path.join(process_dir, 'contact/distance_map')  # numpy .npy file   这里给出接触图的路径
-    hla_key_blousm_dict=read_hla_blousm()   #对hla进行blousm编码
-    #对hla进行接触图获取和理化性质计算
+    hla_distance_dir = os.path.join(process_dir, 'contact/distance_map')  # numpy .npy file   Provide the path for the contact map
+    hla_key_blousm_dict=read_hla_blousm()   #Perform Blosum encoding for HLA
+    # Obtain contact map and calculate physicochemical properties for HLA
     hla_graph = dict()    
     all_hla_len=[]
     for i in tqdm(range(len(hla_dict))):
@@ -235,17 +232,17 @@ def train_predict_div(train_file,vaild_file,dataset_structure,seed):    #数据�
            
     train_hlas,train_peptides,train_Y=np.asarray(train_entries)[:,0],np.asarray(train_entries)[:,1],np.asarray(train_entries)[:,2]
     vaild_hlas,vaild_peptides,vaild_Y=np.asarray(vaild_entries)[:,0],np.asarray(vaild_entries)[:,1],np.asarray(vaild_entries)[:,2]
-    #对pepetide进行理化性质计算
+    # Calculate physicochemical properties for the peptide
     train_pep_lihua=batch_seq_feature_Bi(train_peptides,15,12)
     vaild_pep_lihua=batch_seq_feature_Bi(vaild_peptides,15,12)
-    #对peptide进行blousm计算
+    # Perform Blosum calculation for the peptide
     train_pep_blousm=read_pep_blousm(train_peptides)
     vaild_pep_blousm=read_pep_blousm(vaild_peptides)    
    
     train_pep_feature=torch.cat((torch.tensor(train_pep_lihua),torch.tensor(train_pep_blousm)),axis=-1)
     vaild_pep_feature=torch.cat((torch.tensor(vaild_pep_lihua),torch.tensor(vaild_pep_blousm)),axis=-1)
     
-    #这一段的意义是给训练测试数据集中每个hla配备了接触图，所以，我必须把3-D分子图也输入进入，给每个hla配备上
+  
     train_dataset=HPIDataset_peps_new_blousm_pep(xh=train_hlas, peptide_key=train_peptides,
                                y=train_Y.astype(float), hla_contact_graph=hla_graph,hla_blousm=hla_key_blousm_dict,hla_3d_graph=dataset_structure,peps_feature=train_pep_feature,all_hla_len=all_hla_len)
     
@@ -256,7 +253,7 @@ def train_predict_div(train_file,vaild_file,dataset_structure,seed):    #数据�
     
 
 def test_data_div(test_file):
-    #得到文件中hla键的顺序
+    # Get the order of HLA keys in the file
     common_hla_file='../data/contact/common_hla_sequence.csv'
     test_entries,test_hla_keys,test_hla_dict,hla_dict=hla_key_and_setTrans(common_hla_file,test_file)
     
@@ -266,10 +263,10 @@ def test_data_div(test_file):
         key=int(key)
         hla_full_sequence_dict[key]=value
         
-    # 构建接触图/home/layomi/drive1/项目代/home/layomi/drive1/项目代码/MMGHLA_Classification_Topography码/MMGHLA_Classification_Topography
+    
     process_dir = os.path.join('..', 'data/pre_process')
-    hla_distance_dir = os.path.join(process_dir, 'contact/distance_map')  # numpy .npy file   这里给出接触图的路径
-    hla_key_blousm_dict=read_hla_blousm()   #对hla进行blousm编码
+    hla_distance_dir = os.path.join(process_dir, 'contact/distance_map')  # numpy .npy file   Provide the path for the contact map
+    hla_key_blousm_dict=read_hla_blousm()   #Perform Blosum encoding for HLA
     hla_graph = dict()    
     all_hla_len=[]
     for i in tqdm(range(len(hla_dict))):
@@ -282,7 +279,7 @@ def test_data_div(test_file):
    
     
     test_hlas,test_peptides,test_Y=np.asarray(test_entries)[:,0],np.asarray(test_entries)[:,1],np.asarray(test_entries)[:,2]
-    cath = CATHDataset(os.path.join('/home1/layomi/项目代码/MMGHLA_CT_blousm/data/aphlafold2', 'structure.jsonl'))
+    cath = CATHDataset(os.path.join('../data/aphlafold2', 'structure.jsonl'))
     dataset_structure = transform_data(cath.data, max_pro_seq_len)
    
     test_pep_lihua=batch_seq_feature_Bi(test_peptides,15,12)
@@ -297,7 +294,7 @@ def test_data_div(test_file):
 
 
 
-def read_hla_blousm():  #得到所有序列的blousm编码
+def read_hla_blousm():  # Get Blosum encoding for all sequences
     hla_full_sequence_dict=dict()
     full_seq_dict=json.load(open('../data/contact/common_hla_key_full_sequence_new.txt'), object_pairs_hook=OrderedDict)
     for key,value in full_seq_dict.items():
@@ -331,9 +328,9 @@ def read_pep_blousm(peptides):
             else:
                 pep_blosum.append(np.zeros(20).tolist())
         for residue_index in range(15):
-            #Encode the peptide sequence in the 13-24 columns, with the C-terminal aligned to the right end
-            #If the peptide is shorter than 12 residues, the remaining positions on
-            #the left are filled will zero-padding
+            # Encode the peptide sequence in the 13-24 columns, with the C-terminal aligned to the right end
+            # If the peptide is shorter than 12 residues, the remaining positions on
+            # the left are filled will zero-padding
             if 15 - residue_index > len(pep):
                 pep_blosum.append(np.zeros(20).tolist()) 
             else:

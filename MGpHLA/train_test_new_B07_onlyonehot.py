@@ -190,7 +190,7 @@ def transfer(y_prob, threshold = 0.5):
 
 
 def classtopo_encoder(fold_test):
-    #初始化整个类-拓扑图的节点特征
+    # Initialize the node features for the entire class-topological graph
     hla_feature_mean_file='../data/fold_data/fold_data_new2/train_pos/classtopo/hla_onehot_1.txt'
     if type(fold_test)==int:
         cate_hla_key_feature_file='../data/fold_data/fold_data_new2/train_pos/2008_onehot_newfeature_nozscore/cate_hla_key_feature{}.txt'.format(fold_test)
@@ -202,7 +202,6 @@ def classtopo_encoder(fold_test):
         data_hla=json.load(f)   
     with open(cate_hla_key_feature_file, 'r') as file1:
         data = json.load(file1)
-    #hla_nodes_feature = data['hla_nodes']     #也是一个字典
     class_nodes_feature = data['class_nodes']
     hla_nodes_feature=data_hla
     hlas_features=[]
